@@ -1,0 +1,4 @@
+.git
+target/*.pom
+target/classes
+target/test-classes
