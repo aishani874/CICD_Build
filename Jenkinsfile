@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME     = 'complete-build-app'
         CONTAINER_NAME = 'complete-build-container'
-        // Path to Docker CLI binary
         DOCKER_BIN     = '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"'
     }
 
@@ -15,7 +14,9 @@ pipeline {
                 checkout scm
             }
         }
-
+    tools {
+        maven 'Maven3'
+        }
         stage('Compile') {
             steps {
                 echo 'Compiling Java source files via Maven...'
