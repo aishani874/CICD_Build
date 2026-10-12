@@ -1,10 +1,18 @@
 pipeline {
     agent any
 
+    // Automatically injects Maven binaries into the PATH for all stages
+    tools {
+        maven 'Maven3'
+    }
+
     environment {
+        // Path to Docker CLI binary
+        DOCKER_BIN     = '"C:\\Users\\tuhi8\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe"'
+        
+        // Application & container configuration
         IMAGE_NAME     = 'complete-build-app'
         CONTAINER_NAME = 'complete-build-container'
-        DOCKER_BIN     = '"C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"'
     }
 
     stages {
@@ -14,9 +22,7 @@ pipeline {
                 checkout scm
             }
         }
-    tools {
-        maven 'Maven3'
-        }
+
         stage('Compile') {
             steps {
                 echo 'Compiling Java source files via Maven...'
@@ -26,7 +32,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo 'Running automated JUnit unit tests via Surefire...'
+                echo 'Running automated JUnit unit tests...'
                 bat 'mvn test'
             }
         }
@@ -41,7 +47,9 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker container image...'
-                bat "${DOCKER_BIN} build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest ."
+                bat """
+                    ${DOCKER_BIN} build -t ${IMAGE_NAME}:${BUILD_NUMBER} -t ${IMAGE_NAME}:latest .
+                """
             }
         }
 
@@ -49,7 +57,10 @@ pipeline {
             steps {
                 echo 'Deploying application as a Docker container...'
                 bat """
-                    ${DOCKER_BIN} rm -f ${CONTAINER_NAME} 2>nul
+                    rem Stop and remove any pre-existing container with the same name
+                    ${DOCKER_BIN} rm -f ${CONTAINER_NAME} 2>nul || exit 0
+                    
+                    rem Start the newly built container
                     ${DOCKER_BIN} run -d --name ${CONTAINER_NAME} ${IMAGE_NAME}:${BUILD_NUMBER}
                 """
             }
@@ -58,10 +69,10 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline completed successfully! All stages executed."
+            echo "Pipeline completed successfully! All stages executed on Jenkins board."
         }
         failure {
-            echo "Pipeline execution failed. Review the console logs."
+            echo "Pipeline build failed. Please check stage console outputs."
         }
     }
 }
